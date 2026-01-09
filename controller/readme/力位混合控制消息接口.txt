@@ -1,0 +1,37 @@
+控制器输出：
+	消息类型：geometry_msgs::Point
+	/angle1
+	/angle2
+	/angle3
+	消息类型：std_msgs::Float64
+	/thrust1
+	/thrust2
+	/thrust3
+控制器输入：
+	消息类型：geometry_msgs::Point
+	/nominal_position
+	/nominal_euler_angles
+	/nominal_velocity
+	/nominal_body_rate
+	/ref_thrust
+	/sensor_thrust
+	/main_position_sim
+	/main_velocity_sim
+	/main_euler_angles_sim
+	/main_body_rates_sim
+	/init_euler_angles_cmd
+	/init_position_cmd
+	/init_body_rates_cmd
+	/init_velocity_cmd
+
+	消息类型：std_msgs::Float64
+	/psi_bias_1
+	/psi_bias_2
+	/psi_bias_3
+
+	控制消息类型：std_msgs::Bool
+	/start_pub_att  接收为true时，运行集联体常规控制器
+	/mode_switch     /start_pub_att接收为true并且，/mode_switch接收为true时，运行集联体力位混合控制器
+	
+运行节点命令：
+rosrun controller impedance_control_node 
