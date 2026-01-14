@@ -186,6 +186,8 @@ target_link_libraries(four_controller_node
   # libecos.so
   #src/param.cpp
 )
+add_executable(five_controller_node src/five_controller_node.cpp src/five_param.cpp)
+target_link_libraries(five_controller_node ${catkin_LIBRARIES})
 
 add_executable(${PROJECT_NAME}_node src/controller_node.cpp src/param.cpp)
 target_link_libraries(${PROJECT_NAME}_node

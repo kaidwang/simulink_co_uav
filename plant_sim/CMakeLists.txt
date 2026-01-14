@@ -149,6 +149,8 @@ add_executable(four_plant_node src/four_plant.cpp)
 target_link_libraries(four_plant_node
   ${catkin_LIBRARIES}
 )
+add_executable(five_plant_node src/five_plant.cpp)
+target_link_libraries(five_plant_node ${catkin_LIBRARIES})
 
 #############
 ## Install ##
