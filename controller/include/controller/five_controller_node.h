@@ -3,8 +3,8 @@
 //define a class and decleartion of class member function
 //change this code for normal path or mpc path
 //four sub-aircraft platform
-#ifndef  FOUR_CONTROLLER_NODE_H_
-#define  FOUR_CONTROLLER_NODE_H_
+#ifndef  FIVE_CONTROLLER_NODE_H_
+#define  FIVE_CONTROLLER_NODE_H_
 
 #include <stdlib.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -13,7 +13,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
-#include <controller/four_param.h>
+#include <controller/five_param.h>
 // #include <dynamic_reconfigure/server.h>
 #include <math.h>
 #include <dynamic_reconfigure/server.h> 
@@ -43,6 +43,7 @@ private:
     Eigen::Matrix3f pos_s2;
     Eigen::Matrix3f pos_s3;
     Eigen::Matrix3f pos_s4;
+    Eigen::Matrix3f pos_s5;
 
 
     //define Rotation matrix
@@ -81,6 +82,7 @@ private:
     Eigen::Vector3f lamda2;
     Eigen::Vector3f lamda3;
     Eigen::Vector3f lamda4;
+    Eigen::Vector3f lamda5;
     //grad_w 
 
     //rotation kinematic inverse
@@ -102,11 +104,13 @@ private:
     geometry_msgs::Point ang2;
     geometry_msgs::Point ang3;
     geometry_msgs::Point ang4;
+    geometry_msgs::Point ang5;
 
     std_msgs::Float64 thu1;
     std_msgs::Float64 thu2;
     std_msgs::Float64 thu3;
     std_msgs::Float64 thu4;
+     std_msgs::Float64 thu5;
 
     //input list
     geometry_msgs::Point nominal_position;      //setpoint position
@@ -135,11 +139,13 @@ private:
     ros::Publisher angle2_pub;
     ros::Publisher angle3_pub;
     ros::Publisher angle4_pub;
+    ros::Publisher angle5_pub;
 
     ros::Publisher thrust1_pub;
     ros::Publisher thrust2_pub;
     ros::Publisher thrust3_pub;
     ros::Publisher thrust4_pub;
+    ros::Publisher thrust5_pub;
 
 
     //subscriber list
@@ -298,10 +304,13 @@ private:
 	geometry_msgs::Point ang2,
 	geometry_msgs::Point ang3,
 	geometry_msgs::Point ang4,
+    geometry_msgs::Point ang5,
 	std_msgs::Float64 thu1,
 	std_msgs::Float64 thu2,
 	std_msgs::Float64 thu3,
-	std_msgs::Float64 thu4);    //top level function
+	std_msgs::Float64 thu4,
+    std_msgs::Float64 thu5
+);    //top level function
 
     void controller_body();//controller body
     void control_allocation();//controller allocation body

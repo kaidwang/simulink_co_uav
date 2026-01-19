@@ -2,7 +2,7 @@
 //2023.11.28
 //controller main funciton
 //four sub-aircraft platform
-#include <controller/four_controller_node.h>
+#include <controller/five_controller_node.h>
 // #include <controller/config_param.h>
 
 //i need to control the controller when to run
@@ -38,7 +38,7 @@ controller_class::controller_class(ros::NodeHandle* nodehandle):nh(*nodehandle)
 	ew = zero_v3;
 	thrust_u = zero_v3;
 	torques_u = zero_v3;
-	lamda1 = lamda2= lamda3= zero_v3;
+	lamda1 = lamda2= lamda3= lamda4=lamda5= zero_v3;
 	omega_d = zero_v3;
 	omege = zero_v3;
 	vd=zero_v3;
@@ -51,9 +51,13 @@ controller_class::controller_class(ros::NodeHandle* nodehandle):nh(*nodehandle)
 	ang1.x=ang1.y=ang1.z=0;
 	ang2.x=ang2.y=ang2.z=0;
 	ang3.x=ang3.y=ang3.z=0;
+	ang4.x=ang4.y=ang4.z=0;   
+	ang5.x=ang5.y=ang5.z=0; 
 	thu1.data = 0;
 	thu2.data = 0;
 	thu3.data = 0;
+	thu4.data = 0;
+	thu5.data = 0;
 	nominal_position = init_position;
 	nominal_euler_angles = init_euler_angles;
 
@@ -239,12 +243,15 @@ controller_class::controller_class(ros::NodeHandle* nodehandle):nh(*nodehandle)
 	ROS_INFO_STREAM("fly2_pos:  "<<param.fly2_pos.x<<" "<<param.fly2_pos.y);
 	ROS_INFO_STREAM("fly3_pos:  "<<param.fly3_pos.x<<" "<<param.fly3_pos.y);
 	ROS_INFO_STREAM("fly4_pos:  "<<param.fly4_pos.x<<" "<<param.fly4_pos.y);
+	ROS_INFO_STREAM("fly5_pos:  "<<param.fly5_pos.x<<" "<<param.fly5_pos.y);
+
 
 	ROS_INFO_STREAM("center_mass:"<<param.center_mass);
 	ROS_INFO_STREAM("fly1_mass:  "<<param.fly1_mass);
 	ROS_INFO_STREAM("fly2_mass:  "<<param.fly2_mass);
 	ROS_INFO_STREAM("fly3_mass:  "<<param.fly3_mass);
 	ROS_INFO_STREAM("fly4_mass:  "<<param.fly4_mass);
+	ROS_INFO_STREAM("fly5_mass:  "<<param.fly5_mass);
 
 	ROS_INFO_STREAM("S3Q_mass:   "<<param.S3Q_mass);
 	ROS_INFO_STREAM("param diplay");
@@ -310,11 +317,13 @@ void controller_class::init_publisher()
 	angle2_pub = nh.advertise<geometry_msgs::Point>("/angle2",10,this);
 	angle3_pub = nh.advertise<geometry_msgs::Point>("/angle3",10,this);
 	angle4_pub = nh.advertise<geometry_msgs::Point>("/angle4",10,this);
+	angle5_pub = nh.advertise<geometry_msgs::Point>("/angle5",10,this);
 
 	thrust1_pub = nh.advertise<std_msgs::Float64>("/thrust1",10,this);
 	thrust2_pub = nh.advertise<std_msgs::Float64>("/thrust2",10,this);
 	thrust3_pub = nh.advertise<std_msgs::Float64>("/thrust3",10,this);
 	thrust4_pub = nh.advertise<std_msgs::Float64>("/thrust4",10,this);
+	thrust5_pub = nh.advertise<std_msgs::Float64>("/thrust5",10,this);
 
 }
 
@@ -666,21 +675,25 @@ void controller_class::ctrl_allocation()
 	pos_s2=pos_mat(param.fly2_pos.x,param.fly2_pos.y,param.fly2_pos.z);
 	pos_s3=pos_mat(param.fly3_pos.x,param.fly3_pos.y,param.fly3_pos.z);
 	pos_s4=pos_mat(param.fly4_pos.x,param.fly4_pos.y,param.fly4_pos.z);
+	pos_s5 = pos_mat(param.fly5_pos.x, param.fly5_pos.y, param.fly5_pos.z);
+
 	//debug line
 	// ROS_INFO_STREAM("pos_s1: "<<pos_s1);
 	// ROS_INFO_STREAM("pos_s2: "<<pos_s2);
 	// ROS_INFO_STREAM("pos_s3: "<<pos_s3);
 	ROS_INFO_STREAM("pos_s4: "<<pos_s4);
-
+	ROS_INFO_STREAM("pos_s5: "<<pos_s5);
 	Eigen::MatrixXf B(6, 12);
 	B.block<3,3>(0,0)=I;
 	B.block<3,3>(0,3)=I;
 	B.block<3,3>(0,6)=I;
 	B.block<3,3>(0,9)=I;
+	B.block<3,3>(0,12)=I;   
 	B.block<3,3>(3,0)=pos_s1;
 	B.block<3,3>(3,3)=pos_s2;
 	B.block<3,3>(3,6)=pos_s3;
 	B.block<3,3>(3,9)=pos_s4;
+	B.block<3,3>(3,12)=pos_s5;
 	Eigen::MatrixXf B_calc(6, 6);
 	B_calc = B*(B.transpose());
 
@@ -710,25 +723,34 @@ void controller_class::ctrl_allocation()
 	inter4.block<3,3>(0,0)=I;
 	inter4.block<3,3>(0,3)=pos_s4.transpose();
 
+	Eigen::MatrixXf inter5(3, 6);
+	inter5.block<3,3>(0,0)=I;
+	inter5.block<3,3>(0,3)=pos_s5.transpose();
+
+
 	lamda1=inter1*(B_calc.inverse()*U);
 	lamda2=inter2*(B_calc.inverse()*U);
 	lamda3=inter3*(B_calc.inverse()*U);
 	lamda4=inter4*(B_calc.inverse()*U);
+	lamda5=inter5*(B_calc.inverse()*U);
 	//debug line
 	// ROS_INFO_STREAM("lamda1: "<<lamda1);
 	// ROS_INFO_STREAM("lamda2: "<<lamda2);
 	// ROS_INFO_STREAM("lamda3: "<<lamda3);
 	float angle = 45*PI/180;
-	//allocation function
-	double psi_cmd1=nominal_euler_angles.z+angle;
-	double psi_cmd2=nominal_euler_angles.z+angle+PI/2;
-	double psi_cmd3=nominal_euler_angles.z-angle-PI/2;
-	double psi_cmd4=nominal_euler_angles.z-angle;
+	float step  = 72*PI/180;
+
+	double psi_cmd1 = nominal_euler_angles.z + angle;
+	double psi_cmd2 = nominal_euler_angles.z + angle + step;
+	double psi_cmd3 = nominal_euler_angles.z + angle + 2*step;
+	double psi_cmd4 = nominal_euler_angles.z + angle + 3*step;
+	double psi_cmd5 = nominal_euler_angles.z + angle + 4*step;
 
 	Eigen::Vector4f thu_att1=alloc(lamda1,psi_cmd1);
 	Eigen::Vector4f thu_att2=alloc(lamda2,psi_cmd2);
 	Eigen::Vector4f thu_att3=alloc(lamda3,psi_cmd3);
 	Eigen::Vector4f thu_att4=alloc(lamda4,psi_cmd4);
+	Eigen::Vector4f thu_att5=alloc(lamda5,psi_cmd5);
 
 	//push data to message
 
@@ -751,6 +773,11 @@ void controller_class::ctrl_allocation()
 	ang4.x    = thu_att4(1);
 	ang4.y    = thu_att4(2);
 	ang4.z    = thu_att4(3);
+
+	thu5.data = thu_att5(0);
+	ang5.x    = thu_att5(1);
+	ang5.y    = thu_att5(2);
+	ang5.z    = thu_att5(3);
 
 	//debug line
 	// ROS_INFO_STREAM("out1: "<<thu_att1);
@@ -1360,10 +1387,12 @@ void controller_class::output_publish(
 	geometry_msgs::Point ang2,
 	geometry_msgs::Point ang3,
 	geometry_msgs::Point ang4,
+	geometry_msgs::Point ang5, 
 	std_msgs::Float64 thu1,
 	std_msgs::Float64 thu2,
 	std_msgs::Float64 thu3,
-	std_msgs::Float64 thu4)
+	std_msgs::Float64 thu4,
+	std_msgs::Float64 thu5)
 {
 	//publish message output, this fucntion need to revise more
 	// if()
@@ -1381,21 +1410,25 @@ void controller_class::output_publish(
 	angle2_pub.publish(ang2);
 	angle3_pub.publish(ang3);
 	angle4_pub.publish(ang4);
+	angle5_pub.publish(ang5);  
 
 	thrust1_pub.publish(thu1);
 	thrust2_pub.publish(thu2);
 	thrust3_pub.publish(thu3);
 	thrust4_pub.publish(thu4);
+	thrust5_pub.publish(thu5);
 
 	ROS_INFO_STREAM("ang1,x,y,z :"<<ang1.x<<" "<<ang1.y<<" "<<ang1.z);
 	ROS_INFO_STREAM("ang2,x,y,z :"<<ang2.x<<" "<<ang2.y<<" "<<ang2.z);
 	ROS_INFO_STREAM("ang3,x,y,z :"<<ang3.x<<" "<<ang3.y<<" "<<ang3.z);
 	ROS_INFO_STREAM("ang4,x,y,z :"<<ang4.x<<" "<<ang4.y<<" "<<ang4.z);
+	ROS_INFO_STREAM("ang5,x,y,z :"<<ang5.x<<" "<<ang5.y<<" "<<ang5.z);
 
 	ROS_INFO_STREAM("thu1 :"<<thu1.data);
 	ROS_INFO_STREAM("thu2 :"<<thu2.data);
 	ROS_INFO_STREAM("thu3 :"<<thu3.data);
 	ROS_INFO_STREAM("thu4 :"<<thu4.data);
+	ROS_INFO_STREAM("thu5 :"<<thu5.data);
 
 }
 
@@ -1494,7 +1527,7 @@ void controller_class::calc_cb(const ros::TimerEvent&)
 	// 	param.kd_phi,
     //   	param.kd_theta,
     //   	param.kd_psi);
-    ROS_INFO_STREAM("four air_crafts controller...");
+    ROS_INFO_STREAM("five air_crafts controller...");
 
 	if(start_pub_att.data)
 	{
@@ -1511,7 +1544,7 @@ void controller_class::calc_cb(const ros::TimerEvent&)
 			ROS_INFO_STREAM("run times: "<< run_times);
 			controller_body();//controller function
 			control_allocation();//allocation function
-			output_publish(ang1,ang2,ang3,ang4,thu1,thu2,thu3,thu4);
+			output_publish(ang1,ang2,ang3,ang4,ang5,thu1,thu2,thu3,thu4,thu5);
 		}
 	}
 	else{

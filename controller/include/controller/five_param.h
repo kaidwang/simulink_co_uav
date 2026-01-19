@@ -1,15 +1,16 @@
-//kaidi wang code 2021.5.31
-//define a class of controller basic param
-#ifndef FOUR_PARAM_H_
-#define FOUR_PARAM_H_
+// kaidi wang code 2021.5.31
+// define a class of controller basic param
+#ifndef FIVE_PARAM_H_
+#define FIVE_PARAM_H_
 
 #include <Eigen/Dense>
 #define PI 3.14
 // #include <controller/paramConfig.h>
+
 class some_xyz
 {
 private:
-    //none private param
+    // none private param
 public:
     double x;
     double y;
@@ -23,13 +24,14 @@ class controller_base
 private:
 
 public:
-    //will be used in controller_node.cpp
+    // will be used in controller_node.cpp
     /* define data list */
     some_xyz fly1_pos;
     some_xyz fly2_pos;
     some_xyz fly3_pos;
     some_xyz fly4_pos;
-    
+    some_xyz fly5_pos;   // <<< 新增：第5架位置
+
     some_xyz I_center;
 
     float center_mass;
@@ -37,12 +39,14 @@ public:
     float fly2_mass;
     float fly3_mass;
     float fly4_mass;
+    float fly5_mass;     // <<< 新增：第5架质量
 
     some_xyz I_sys;
     float S3Q_mass;
 
     some_xyz tool_pos;
-    //controller param
+
+    // controller param
     float kp_x;
     float kp_y;
     float kp_z;
@@ -54,27 +58,25 @@ public:
     float kd_x;
     float kd_y;
     float kd_z;
+
     /***********************autopilot control PID theory************************/
     float kpx;
     float kpy;
     float kpz;
-  
     /***************************************************************************/
-    float kp_phi;//x;
-    float kp_theta;//y;
-    float kp_psi;//z;
+    float kp_phi;// x;
+    float kp_theta;// y;
+    float kp_psi;// z;
 
-    float ki_phi;//x;
-    float ki_theta;//y;
-    float ki_psi;//z;
+    float ki_phi;// x;
+    float ki_theta;// y;
+    float ki_psi;// z;
 
-    float kd_phi;//x;
-    float kd_theta;//y;
-    float kd_psi;//z;
+    float kd_phi;// x;
+    float kd_theta;// y;
+    float kd_psi;// z;
 
-
-    
-    //omege and epsilon param
+    // omege and epsilon param
     double omega_phi;
     double epsilon_phi;
 
@@ -114,4 +116,6 @@ public:
     controller_base(/* args */);
     ~controller_base();
 };
+
 #endif
+

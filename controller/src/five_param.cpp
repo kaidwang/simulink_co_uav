@@ -1,4 +1,5 @@
-#include <controller/four_param.h>
+#include <controller/five_param.h>
+
 
 some_xyz::some_xyz(/* args */)
 {
@@ -15,28 +16,50 @@ controller_base::controller_base(/* args */)
 {
 
     float base_len = 0.452;
-    // float outrigger_len = 0.51;
-    float angle = 45*PI/180;
-    float vertical_dis = base_len*cos(angle);
-    float horizontal_dis = base_len*cos(angle);
-    fly1_pos.x = vertical_dis;
-    fly1_pos.y = horizontal_dis;
-    fly1_pos.z = -0.046;
+float angle = 45*PI/180;
+float step  = 72*PI/180;   // 360/5 = 72 deg
 
-    //fly2_position
-    fly2_pos.x = -fly1_pos.x ;
-    fly2_pos.y = fly1_pos.y;
-    fly2_pos.z = -0.046;
+float vertical_dis  = 0;
+float horizontal_dis = 0;
 
-    //fly3_position
-    fly3_pos.x = fly2_pos.x;
-    fly3_pos.y = -fly2_pos.y;
-    fly3_pos.z = -0.046;
+// fly1_position（
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*cos(angle);
+fly1_pos.x = vertical_dis;
+fly1_pos.y = horizontal_dis;
+fly1_pos.z = -0.046;
 
-    // fly4_position
-    fly4_pos.x = -fly3_pos.x;
-    fly4_pos.y = fly3_pos.y;
-    fly4_pos.z = -0.046;
+// fly2_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly2_pos.x = vertical_dis;
+fly2_pos.y = horizontal_dis;
+fly2_pos.z = -0.046;
+
+// fly3_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly3_pos.x = vertical_dis;
+fly3_pos.y = horizontal_dis;
+fly3_pos.z = -0.046;
+
+// fly4_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly4_pos.x = vertical_dis;
+fly4_pos.y = horizontal_dis;
+fly4_pos.z = -0.046;
+
+// fly5_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly5_pos.x = vertical_dis;
+fly5_pos.y = horizontal_dis;
+fly5_pos.z = -0.046;
 
     //tool position
     tool_pos.x = 0;
@@ -53,6 +76,8 @@ controller_base::controller_base(/* args */)
     fly2_mass = 1.3;//1.604,1.97;//
     fly3_mass = 1.3;//1.583,1.94;//
     fly4_mass = 1.3;
+    fly5_mass = 1.3;
+
     center_mass = 1.2+1.8;//+1.283;
     //I center param
     I_center.x = 0.056804546;
@@ -128,24 +153,27 @@ controller_base::controller_base(/* args */)
     epsilon_r = 6;
 
     //calc mass of S3Q platform
-    S3Q_mass = fly1_mass+fly2_mass+fly3_mass+fly4_mass+center_mass;
+    S3Q_mass = fly1_mass+fly2_mass+fly3_mass+fly4_mass+fly5_mass+center_mass;
     I_sys.x =  I_center.x + 
                fly1_mass*(fly1_pos.y*fly1_pos.y+fly1_pos.z*fly1_pos.z)+
                fly2_mass*(fly2_pos.y*fly2_pos.y+fly2_pos.z*fly2_pos.z)+
                fly3_mass*(fly3_pos.y*fly3_pos.y+fly3_pos.z*fly3_pos.z)+
-               fly4_mass*(fly4_pos.y*fly4_pos.y+fly4_pos.z*fly4_pos.z);
+               fly4_mass*(fly4_pos.y*fly4_pos.y+fly4_pos.z*fly4_pos.z)+
+               fly5_mass*(fly5_pos.y*fly5_pos.y + fly5_pos.z*fly5_pos.z);
 
     I_sys.y =  I_center.y + 
                fly1_mass*(fly1_pos.x*fly1_pos.x+fly1_pos.z*fly1_pos.z)+
                fly2_mass*(fly2_pos.x*fly2_pos.x+fly2_pos.z*fly2_pos.z)+
                fly3_mass*(fly3_pos.x*fly3_pos.x+fly3_pos.z*fly3_pos.z)+
-               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.z*fly4_pos.z);
+               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.z*fly4_pos.z)+
+               fly5_mass*(fly5_pos.x*fly5_pos.x + fly5_pos.z*fly5_pos.z);
 
     I_sys.z =  I_center.z + 
                fly1_mass*(fly1_pos.x*fly1_pos.x+fly1_pos.y*fly1_pos.y)+
                fly2_mass*(fly2_pos.x*fly2_pos.x+fly2_pos.y*fly2_pos.y)+
                fly3_mass*(fly3_pos.x*fly3_pos.x+fly3_pos.y*fly3_pos.y)+
-               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.y*fly4_pos.y);
+               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.y*fly4_pos.y)+
+               fly5_mass*(fly5_pos.x*fly5_pos.x + fly5_pos.y*fly5_pos.y);
 }
 
 controller_base::~controller_base()
