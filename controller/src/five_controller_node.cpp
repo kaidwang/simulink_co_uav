@@ -683,7 +683,7 @@ void controller_class::ctrl_allocation()
 	// ROS_INFO_STREAM("pos_s3: "<<pos_s3);
 	ROS_INFO_STREAM("pos_s4: "<<pos_s4);
 	ROS_INFO_STREAM("pos_s5: "<<pos_s5);
-	Eigen::MatrixXf B(6, 12);
+	Eigen::MatrixXf B(6, 15);
 	B.block<3,3>(0,0)=I;
 	B.block<3,3>(0,3)=I;
 	B.block<3,3>(0,6)=I;

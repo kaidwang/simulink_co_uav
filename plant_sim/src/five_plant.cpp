@@ -1,7 +1,7 @@
 //kaidi wang
 // 2023.11.28
 //define a class and declearation of class member
-#include <plant_sim/four_plant.h>
+#include <plant_sim/five_plant.h>
 
 //basic function list
 //init publisher function
@@ -39,6 +39,8 @@ void plant_sim::init_subscriber()
 	("/angle3",1,&plant_sim::angle3_sub_cb,this);
     angle4_sub = nh.subscribe<geometry_msgs::Point>
 	("/angle4",1,&plant_sim::angle4_sub_cb,this);
+    angle5_sub = nh.subscribe<geometry_msgs::Point>
+    ("/angle5",1,&plant_sim::angle5_sub_cb,this);
 
     thrust1_sub = nh.subscribe<std_msgs::Float64>
     ("/thrust1",1,&plant_sim::thrust1_sub_cb,this);
@@ -48,6 +50,8 @@ void plant_sim::init_subscriber()
     ("/thrust3",1,&plant_sim::thrust3_sub_cb,this);
     thrust4_sub = nh.subscribe<std_msgs::Float64>
     ("/thrust4",1,&plant_sim::thrust4_sub_cb,this);
+    thrust5_sub = nh.subscribe<std_msgs::Float64>
+    ("/thrust5",1,&plant_sim::thrust5_sub_cb,this);
 
 	init_euler_angles_cmd_sub = nh.subscribe<geometry_msgs::Point>
 	("/init_euler_angles_cmd",1,&plant_sim::init_euler_angles_cmd_sub_cb,this);
@@ -163,6 +167,10 @@ void plant_sim::angle4_sub_cb(const geometry_msgs::Point::ConstPtr& msg)
     ang4 = *msg;
 }
 
+void plant_sim::angle5_sub_cb(const geometry_msgs::Point::ConstPtr& msg)
+{
+    ang5 = *msg;
+}
 //thrust1 sub function
 void plant_sim::thrust1_sub_cb(const std_msgs::Float64::ConstPtr& msg)
 {
@@ -184,6 +192,11 @@ void plant_sim::thrust3_sub_cb(const std_msgs::Float64::ConstPtr& msg)
 void plant_sim::thrust4_sub_cb(const std_msgs::Float64::ConstPtr& msg)
 {
     thu4 = *msg;
+}
+
+void plant_sim::thrust5_sub_cb(const std_msgs::Float64::ConstPtr& msg)
+{
+    thu5 = *msg;
 }
 
 //init euler cmd function
@@ -232,21 +245,24 @@ void plant_sim::mode_switch_sub_cb(const std_msgs::Bool::ConstPtr& msg)
 }
 
 
-// compostion function
+/// compostion function
 void plant_sim::composition()
 {
     //calc attitude rotation
-    Eigen::Matrix3f r_mat0, rt_mat0, rmat1,rmat2,rmat3,rmat4;//main_euler_angle rotation mat
+    Eigen::Matrix3f r_mat0, rt_mat0, rmat1,rmat2,rmat3,rmat4,rmat5;
     r_mat0 = euler_to_rotation_mat(euler_angle);
-    rt_mat0 = r_mat0.inverse();//inverse function of rotation matrix
+    rt_mat0 = r_mat0.inverse();
+
     //calc child vehicle rotation 
     rmat1 = euler_to_rotation_mat(ang1);
     rmat2 = euler_to_rotation_mat(ang2);
     rmat3 = euler_to_rotation_mat(ang3);
     rmat4 = euler_to_rotation_mat(ang4);
+    rmat5 = euler_to_rotation_mat(ang5);
 
-    //get vector of thrust1~3
-    Eigen::Vector3f vec_thu1,vec_thu2,vec_thu3,vec_thu4;
+    //get vector of thrust1~5
+    Eigen::Vector3f vec_thu1,vec_thu2,vec_thu3,vec_thu4,vec_thu5;
+
     vec_thu1(0)=vec_thu1(1)=0;
     vec_thu1(2)=-thu1.data;
 
@@ -259,8 +275,10 @@ void plant_sim::composition()
     vec_thu4(0)=vec_thu4(1)=0;
     vec_thu4(2)=-thu4.data;
 
-    //
-    Eigen::Vector3f fw1,fw2,fw3,fw4,f01,f02,f03,f04;
+    vec_thu5(0)=vec_thu5(1)=0;
+    vec_thu5(2)=-thu5.data;
+
+    Eigen::Vector3f fw1,fw2,fw3,fw4,fw5,f01,f02,f03,f04,f05;
     fw1 = rmat1*vec_thu1;
     f01 = rt_mat0*fw1;
 
@@ -272,37 +290,48 @@ void plant_sim::composition()
 
     fw4 = rmat4*vec_thu4;
     f04 = rt_mat0*fw4;
+
+    fw5 = rmat5*vec_thu5;
+    f05 = rt_mat0*fw5;
+
     //define identity matrix3f
     Eigen::Matrix3f I;
-	I(0,0)=I(1,1)=I(2,2)=1;
-	I(0,1)=I(0,2)=I(1,0)=I(1,2)=I(2,0)=I(2,1)=0;
-    //define position s1~3
-	pos_s1=pos_mat(param.fly1_pos.x,param.fly1_pos.y,param.fly1_pos.z);
-	pos_s2=pos_mat(param.fly2_pos.x,param.fly2_pos.y,param.fly2_pos.z);
-	pos_s3=pos_mat(param.fly3_pos.x,param.fly3_pos.y,param.fly3_pos.z);
-	pos_s4=pos_mat(param.fly4_pos.x,param.fly4_pos.y,param.fly4_pos.z);
+    I(0,0)=I(1,1)=I(2,2)=1;
+    I(0,1)=I(0,2)=I(1,0)=I(1,2)=I(2,0)=I(2,1)=0;
 
-    //define B matrix
-    Eigen::MatrixXf B(6, 12);
-	B.block<3,3>(0,0)=I;
-	B.block<3,3>(0,3)=I;
-	B.block<3,3>(0,6)=I;
-	B.block<3,3>(0,9)=I;
+    //define position s1~5
+    pos_s1=pos_mat(param.fly1_pos.x,param.fly1_pos.y,param.fly1_pos.z);
+    pos_s2=pos_mat(param.fly2_pos.x,param.fly2_pos.y,param.fly2_pos.z);
+    pos_s3=pos_mat(param.fly3_pos.x,param.fly3_pos.y,param.fly3_pos.z);
+    pos_s4=pos_mat(param.fly4_pos.x,param.fly4_pos.y,param.fly4_pos.z);
+    pos_s5=pos_mat(param.fly5_pos.x,param.fly5_pos.y,param.fly5_pos.z);
 
-	B.block<3,3>(3,0)=pos_s1;
-	B.block<3,3>(3,3)=pos_s2;
-	B.block<3,3>(3,6)=pos_s3;
-	B.block<3,3>(3,9)=pos_s4;
+    //define B matrix (6x15)
+    Eigen::MatrixXf B(6, 15);
+    B.block<3,3>(0,0)=I;
+    B.block<3,3>(0,3)=I;
+    B.block<3,3>(0,6)=I;
+    B.block<3,3>(0,9)=I;
+    B.block<3,3>(0,12)=I;
 
-    //make an vector(9)
-    Eigen::MatrixXf f01234(12, 1);
-    f01234.block<3,1>(0,0)=f01;
-	f01234.block<3,1>(3,0)=f02;
-	f01234.block<3,1>(6,0)=f03;
-    f01234.block<3,1>(9,0)=f04;
+    B.block<3,3>(3,0)=pos_s1;
+    B.block<3,3>(3,3)=pos_s2;
+    B.block<3,3>(3,6)=pos_s3;
+    B.block<3,3>(3,9)=pos_s4;
+    B.block<3,3>(3,12)=pos_s5;
+
+    //stack forces (15x1)
+    Eigen::MatrixXf f012345(15, 1);
+    f012345.block<3,1>(0,0)=f01;
+    f012345.block<3,1>(3,0)=f02;
+    f012345.block<3,1>(6,0)=f03;
+    f012345.block<3,1>(9,0)=f04;
+    f012345.block<3,1>(12,0)=f05;
+
     //define a 6x1 vector U
     Eigen::MatrixXf U(6, 1);
-    U = B*f01234;
+    U = B*f012345;
+
     //get thrust and torques
     thrust_u(0) = U(0);
     thrust_u(1) = U(1);
@@ -310,14 +339,16 @@ void plant_sim::composition()
     torques_u(0) = U(3);
     torques_u(1) = U(4);
     torques_u(2) = U(5);
+
     thrust_p.x = thrust_u(0);
     thrust_p.y = thrust_u(1);
     thrust_p.z = thrust_u(2);
+
     torque_p.x = torques_u(0);
     torque_p.y = torques_u(1);
     torque_p.z = torques_u(2);
-
 }
+
 
 // system plant function
 void plant_sim::system_plant()
@@ -568,9 +599,17 @@ plant_sim::plant_sim(ros::NodeHandle* nodehandle):nh(*nodehandle)
     ang3.x=0;
     ang3.y=0;
     ang3.z=0;
+    ang4.x=0;
+    ang4.y=0;
+    ang4.z=0;
+    ang5.x=0;
+    ang5.y=0;
+    ang5.z=0;
     thu1.data = 0;
     thu2.data = 0;
     thu3.data = 0;
+    thu4.data = 0;
+    thu5.data = 0;
     init_euler_angles.x=0;
     init_euler_angles.y=0;
     init_euler_angles.z=0;
@@ -629,14 +668,15 @@ plant_sim::plant_sim(ros::NodeHandle* nodehandle):nh(*nodehandle)
 //timer callback function 
 void plant_sim::calc_cb(const ros::TimerEvent&)
 {
-    ROS_INFO_STREAM("four plant...");
+    ROS_INFO_STREAM("five  plant...");
     if(start_pub_att.data)
     {
         // if(mode_switch.data)
         {
 
             //kaidi wang code this section on
-            if((thu1.data!=0)&&(thu2.data!=0)&&(thu3.data!=0))
+            if((thu1.data!=0)&&(thu2.data!=0)&&(thu3.data!=0)&&(thu4.data!=0)&&(thu5.data!=0))
+
             {
                 composition();
                 system_plant();

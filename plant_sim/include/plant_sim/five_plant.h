@@ -1,7 +1,7 @@
 //kaidi wang, 2021.8.1
 //define a class and declearation of class member
-#ifndef FOUR_PLANT_H__
-#define FOUR_PLANT_H__
+#ifndef FIVE_PLANT_H__
+#define FIVE_PLANT_H__
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -67,6 +67,7 @@ public:
     some_xyz fly2_pos;
     some_xyz fly3_pos;
     some_xyz fly4_pos;
+    some_xyz fly5_pos;
 
     some_xyz I_center;
 
@@ -75,6 +76,7 @@ public:
     double fly2_mass;
     double fly3_mass;
     double fly4_mass;
+     double fly5_mass;
 
     some_xyz I_sys;
     double S3Q_mass;//define the mass param
@@ -87,28 +89,51 @@ public:
 controller_base::controller_base(/* args */)
 {
     float base_len = 0.452;
-    // float outrigger_len = 0.51;
-    float angle = 45*PI/180;
-    float vertical_dis = base_len*cos(angle);
-    float horizontal_dis = base_len*cos(angle);
-    fly1_pos.x = vertical_dis;
-    fly1_pos.y = horizontal_dis;
-    fly1_pos.z = -0.046;
+float angle = 45*PI/180;
+float step  = 72*PI/180;
 
-    //fly2_position
-    fly2_pos.x = -fly1_pos.x ;
-    fly2_pos.y = fly1_pos.y;
-    fly2_pos.z = -0.046;
+float vertical_dis;
+float horizontal_dis;
 
-    //fly3_position
-    fly3_pos.x = fly2_pos.x;
-    fly3_pos.y = -fly2_pos.y;
-    fly3_pos.z = -0.046;
+// fly1_position（保持你原来写法）
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*cos(angle);
+fly1_pos.x = vertical_dis;
+fly1_pos.y = horizontal_dis;
+fly1_pos.z = -0.046;
 
-    // fly4_position
-    fly4_pos.x = -fly3_pos.x;
-    fly4_pos.y = fly3_pos.y;
-    fly4_pos.z = -0.046;
+// fly2_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly2_pos.x = vertical_dis;
+fly2_pos.y = horizontal_dis;
+fly2_pos.z = -0.046;
+
+// fly3_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly3_pos.x = vertical_dis;
+fly3_pos.y = horizontal_dis;
+fly3_pos.z = -0.046;
+
+// fly4_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly4_pos.x = vertical_dis;
+fly4_pos.y = horizontal_dis;
+fly4_pos.z = -0.046;
+
+// fly5_position
+angle = angle + step;
+vertical_dis   = base_len*cos(angle);
+horizontal_dis = base_len*sin(angle);
+fly5_pos.x = vertical_dis;
+fly5_pos.y = horizontal_dis;
+fly5_pos.z = -0.046;
+
 
     //tool position
     tool_pos.x = 0;
@@ -125,6 +150,8 @@ controller_base::controller_base(/* args */)
     fly2_mass = 1.3;//1.604,1.97;//
     fly3_mass = 1.3;//1.583,1.94;//
     fly4_mass = 1.3;
+    fly5_mass = 1.3;
+
     center_mass = 1.2;//+1.283;
 
     //I center param
@@ -133,24 +160,30 @@ controller_base::controller_base(/* args */)
     I_center.z = 0.108610089;
 
     //calc mass of S3Q platform
-    S3Q_mass = fly1_mass+fly2_mass+fly3_mass+fly4_mass+center_mass;
+    S3Q_mass = fly1_mass+fly2_mass+fly3_mass+fly4_mass+fly5_mass+center_mass;
+
     I_sys.x =  I_center.x + 
                fly1_mass*(fly1_pos.y*fly1_pos.y+fly1_pos.z*fly1_pos.z)+
                fly2_mass*(fly2_pos.y*fly2_pos.y+fly2_pos.z*fly2_pos.z)+
                fly3_mass*(fly3_pos.y*fly3_pos.y+fly3_pos.z*fly3_pos.z)+
-               fly4_mass*(fly4_pos.y*fly4_pos.y+fly4_pos.z*fly4_pos.z);
+               fly4_mass*(fly4_pos.y*fly4_pos.y+fly4_pos.z*fly4_pos.z)+
+               fly5_mass*(fly5_pos.y*fly5_pos.y+fly5_pos.z*fly5_pos.z)
+               
+;
 
     I_sys.y =  I_center.y + 
                fly1_mass*(fly1_pos.x*fly1_pos.x+fly1_pos.z*fly1_pos.z)+
                fly2_mass*(fly2_pos.x*fly2_pos.x+fly2_pos.z*fly2_pos.z)+
                fly3_mass*(fly3_pos.x*fly3_pos.x+fly3_pos.z*fly3_pos.z)+
-               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.z*fly4_pos.z);
+               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.z*fly4_pos.z)+
+               fly5_mass*(fly5_pos.x*fly5_pos.x+fly5_pos.z*fly5_pos.z);
 
     I_sys.z =  I_center.z + 
                fly1_mass*(fly1_pos.x*fly1_pos.x+fly1_pos.y*fly1_pos.y)+
                fly2_mass*(fly2_pos.x*fly2_pos.x+fly2_pos.y*fly2_pos.y)+
                fly3_mass*(fly3_pos.x*fly3_pos.x+fly3_pos.y*fly3_pos.y)+
-               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.y*fly4_pos.y);
+               fly4_mass*(fly4_pos.x*fly4_pos.x+fly4_pos.y*fly4_pos.y)+
+               fly5_mass*(fly5_pos.x*fly5_pos.x+fly5_pos.y*fly5_pos.y);
     //assignment to Mt matrix
 }
 controller_base::~controller_base()
@@ -182,6 +215,8 @@ private:
     Eigen::Matrix3f pos_s2;
     Eigen::Matrix3f pos_s3;
     Eigen::Matrix3f pos_s4;
+    Eigen::Matrix3f pos_s5;
+
 
     //distributor param list
     Eigen::Vector3f thrust_u;     //thrust vector
@@ -230,11 +265,13 @@ private:
     geometry_msgs::Point ang2;
     geometry_msgs::Point ang3;
     geometry_msgs::Point ang4;
+    geometry_msgs::Point ang5;
 
     std_msgs::Float64 thu1;
     std_msgs::Float64 thu2;
     std_msgs::Float64 thu3;
     std_msgs::Float64 thu4;
+    std_msgs::Float64 thu5;
 
     geometry_msgs::Point init_euler_angles;
     geometry_msgs::Point init_position;
@@ -256,10 +293,12 @@ private:
     ros::Subscriber angle2_sub ;  //angle2_sub
     ros::Subscriber angle3_sub ;  //angle3_sub
     ros::Subscriber angle4_sub ;  //angle4_sub
+    ros::Subscriber angle5_sub ;  //angle5_sub
     ros::Subscriber thrust1_sub ; //thrust1_sub
     ros::Subscriber thrust2_sub ; //thrust2_sub
     ros::Subscriber thrust3_sub ; //thrust3_sub
     ros::Subscriber thrust4_sub ; //thrust4_sub
+    ros::Subscriber thrust5_sub ; //thrust5_sub
     ros::Subscriber init_euler_angles_cmd_sub ;	//init cmd publish: euler angles
     ros::Subscriber init_pos_cmd_sub ;	        //init cmd publish: position
     ros::Subscriber init_body_rates_cmd_sub ;	//init cmd publish: body_rates
@@ -283,11 +322,13 @@ private:
     void angle2_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
     void angle3_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
     void angle4_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
+    void angle5_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
 
     void thrust1_sub_cb(const std_msgs::Float64::ConstPtr& msg);
     void thrust2_sub_cb(const std_msgs::Float64::ConstPtr& msg);
     void thrust3_sub_cb(const std_msgs::Float64::ConstPtr& msg);
     void thrust4_sub_cb(const std_msgs::Float64::ConstPtr& msg);
+    void thrust5_sub_cb(const std_msgs::Float64::ConstPtr& msg);
 
     void init_euler_angles_cmd_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
     void init_pos_cmd_sub_cb(const geometry_msgs::Point::ConstPtr& msg);
