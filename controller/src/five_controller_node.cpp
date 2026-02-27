@@ -728,20 +728,20 @@ void controller_class::ctrl_allocation()
 	inter5.block<3,3>(0,3)=pos_s5.transpose();
 
 
-	// lamda1=inter1*(B_calc.inverse()*U);
-	// lamda2=inter2*(B_calc.inverse()*U);
-	// lamda3=inter3*(B_calc.inverse()*U);
-	// lamda4=inter4*(B_calc.inverse()*U);
-	// lamda5=inter5*(B_calc.inverse()*U);
-	Eigen::MatrixXf I6 = Eigen::MatrixXf::Identity(6,6);
-const float eps = 1e-3f;  // 小的正则项，先用 1e-3，后面再调
-Eigen::VectorXf y = (B_calc + eps * I6).ldlt().solve(U);
+	lamda1=inter1*(B_calc.inverse()*U);
+	lamda2=inter2*(B_calc.inverse()*U);
+	lamda3=inter3*(B_calc.inverse()*U);
+	lamda4=inter4*(B_calc.inverse()*U);
+	lamda5=inter5*(B_calc.inverse()*U);
+// 	Eigen::MatrixXf I6 = Eigen::MatrixXf::Identity(6,6);
+// const float eps = 1e-3f;  // 小的正则项，先用 1e-3，后面再调
+// Eigen::VectorXf y = (B_calc + eps * I6).ldlt().solve(U);
 
-lamda1 = inter1 * y;
-lamda2 = inter2 * y;
-lamda3 = inter3 * y;
-lamda4 = inter4 * y;
-lamda5 = inter5 * y;
+// lamda1 = inter1 * y;
+// lamda2 = inter2 * y;
+// lamda3 = inter3 * y;
+// lamda4 = inter4 * y;
+// lamda5 = inter5 * y;
 	//debug line
 	// ROS_INFO_STREAM("lamda1: "<<lamda1);
 	// ROS_INFO_STREAM("lamda2: "<<lamda2);
@@ -800,25 +800,25 @@ Eigen::Vector4f controller_class::alloc(Eigen::Vector3f f,double psi_cmd)
 	Eigen::Vector3f fw;
 	fw=r_mat*f;
 
-	// thu_att(0)=sqrt(fw(0)*fw(0)+fw(1)*fw(1)+fw(2)*fw(2));
-	// thu_att(1)=asin((fw(1)*cos(psi_cmd)-fw(0)*sin(psi_cmd))/thu_att(0));
-    // thu_att(2)=asin(-(fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))/sqrt((fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))*(fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))+ fw(2)*fw(2)));
-	thu_att(0) = sqrt(fw(0)*fw(0) + fw(1)*fw(1) + fw(2)*fw(2));
-if (thu_att(0) < 1e-6) thu_att(0) = 1e-6;
+	thu_att(0)=sqrt(fw(0)*fw(0)+fw(1)*fw(1)+fw(2)*fw(2));
+	thu_att(1)=asin((fw(1)*cos(psi_cmd)-fw(0)*sin(psi_cmd))/thu_att(0));
+    thu_att(2)=asin(-(fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))/sqrt((fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))*(fw(0)*cos(psi_cmd)+fw(1)*sin(psi_cmd))+ fw(2)*fw(2)));
+// 	thu_att(0) = sqrt(fw(0)*fw(0) + fw(1)*fw(1) + fw(2)*fw(2));
+// if (thu_att(0) < 1e-6) thu_att(0) = 1e-6;
 
-double s1 = (fw(1)*cos(psi_cmd) - fw(0)*sin(psi_cmd)) / thu_att(0);
-if (s1 >  1.0) s1 =  1.0;
-if (s1 < -1.0) s1 = -1.0;
-thu_att(1) = asin(s1);
+// double s1 = (fw(1)*cos(psi_cmd) - fw(0)*sin(psi_cmd)) / thu_att(0);
+// if (s1 >  1.0) s1 =  1.0;
+// if (s1 < -1.0) s1 = -1.0;
+// thu_att(1) = asin(s1);
 
-double a = (fw(0)*cos(psi_cmd) + fw(1)*sin(psi_cmd));
-double denom = sqrt(a*a + fw(2)*fw(2));
-if (denom < 1e-6) denom = 1e-6;
+// double a = (fw(0)*cos(psi_cmd) + fw(1)*sin(psi_cmd));
+// double denom = sqrt(a*a + fw(2)*fw(2));
+// if (denom < 1e-6) denom = 1e-6;
 
-double s2 = -a / denom;
-if (s2 >  1.0) s2 =  1.0;
-if (s2 < -1.0) s2 = -1.0;
-thu_att(2) = asin(s2);
+// double s2 = -a / denom;
+// if (s2 >  1.0) s2 =  1.0;
+// if (s2 < -1.0) s2 = -1.0;
+// thu_att(2) = asin(s2);
 	thu_att(3)=psi_cmd;
 	return thu_att;
 }

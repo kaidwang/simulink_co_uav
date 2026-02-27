@@ -55,6 +55,7 @@ double a_z_ls =0;
 // end point var
 geometry_msgs::Point end_position;
 geometry_msgs::Point end_angle;
+// 在全局变量部分添加
 double rect_width = 4.0;      // 矩形宽度
 double rect_height = 3.0;     // 矩形高度  
 double rect_x_center = 0.0;   // 矩形中心x
@@ -197,71 +198,75 @@ geometry_msgs::Point calc_circle(double r, double x_ori, double y_ori,
 }
 // 添加矩形轨迹生成函数
 geometry_msgs::Point calc_rectangular(
-    double width,
-    double height,
-    double x_center,
-    double y_center,
-    double z_height,
-    double speed,
-    double& progress,
-    double& last_progress,
-    double t)
+    double width,       // 矩形宽度（x方向）
+    double height,      // 矩形高度（y方向） 
+    double x_center,   // 矩形中心x坐标
+    double y_center,   // 矩形中心y坐标
+    double z_height,   // 飞行高度
+    double speed,       // 飞行速度
+    double& progress,   // 轨迹进度（0-4，对应4条边）
+    double& last_progress, // 上一次进度
+    double t)           // 时间
 {
     geometry_msgs::Point rect_path;
-
-    const double perimeter = 2.0 * (width + height);
-
-    // last_progress 作为沿周长走过的距离 s，单位 m
-    last_progress += speed * t;
-    while (last_progress >= perimeter) last_progress -= perimeter;
-    while (last_progress < 0.0) last_progress += perimeter;
-
-    const double s = last_progress;
-    progress = s / perimeter * 4.0;  // 保留你原先的 0-4 表示法，方便观察
-
-    int side = 0;
-    double seg = 0.0;
-
-    // 四条边长度依次为：height, width, height, width
-    if (s < height) {
-        side = 0;                       // 右边：下->上
-        seg = s / height;
-        rect_path.x = x_center + width / 2.0;
-        rect_path.y = y_center - height / 2.0 + height * seg;
-        velocity_out.x = 0.0;
-        velocity_out.y = speed;
-    } else if (s < height + width) {
-        side = 1;                       // 上边：右->左
-        seg = (s - height) / width;
-        rect_path.x = x_center + width / 2.0 - width * seg;
-        rect_path.y = y_center + height / 2.0;
-        velocity_out.x = -speed;
-        velocity_out.y = 0.0;
-    } else if (s < 2.0 * height + width) {
-        side = 2;                       // 左边：上->下
-        seg = (s - height - width) / height;
-        rect_path.x = x_center - width / 2.0;
-        rect_path.y = y_center + height / 2.0 - height * seg;
-        velocity_out.x = 0.0;
-        velocity_out.y = -speed;
-    } else {
-        side = 3;                       // 下边：左->右
-        seg = (s - 2.0 * height - width) / width;
-        rect_path.x = x_center - width / 2.0 + width * seg;
-        rect_path.y = y_center - height / 2.0;
-        velocity_out.x = speed;
-        velocity_out.y = 0.0;
+    static int side = 0; // 当前边：0-右，1-上，2-左，3-下
+    
+    // 更新进度
+    progress = integrator(speed/(2*(width+height)), last_progress, &last_progress, t);
+    
+    // 确保进度在0-4范围内
+    if(progress >= 4.0) {
+        progress = 0.0;
+        last_progress = 0.0;
     }
-
-    rect_path.z = z_height;
-    velocity_out.z = 0.0;
-
-    body_rate_out.x = 0.0;
-    body_rate_out.y = 0.0;
-    body_rate_out.z = 0.0;
-
-
-
+    
+    // 根据进度确定当前边
+    side = static_cast<int>(progress);
+    double segment_progress = progress - side; // 在当前边的进度(0-1)
+    
+    // 计算矩形轨迹
+    switch(side) {
+        case 0: // 右边：从右下到右上
+            rect_path.x = x_center + width/2;
+            rect_path.y = y_center - height/2 + height * segment_progress;
+            rect_path.z = z_height;
+            velocity_out.x = 0;
+            velocity_out.y = speed;
+            break;
+            
+        case 1: // 上边：从右上到左上
+            rect_path.x = x_center + width/2 - width * segment_progress;
+            rect_path.y = y_center + height/2;
+            rect_path.z = z_height;
+            velocity_out.x = -speed;
+            velocity_out.y = 0;
+            break;
+            
+        case 2: // 左边：从左上到左下
+            rect_path.x = x_center - width/2;
+            rect_path.y = y_center + height/2 - height * segment_progress;
+            rect_path.z = z_height;
+            velocity_out.x = 0;
+            velocity_out.y = -speed;
+            break;
+            
+        case 3: // 下边：从左下到右下
+            rect_path.x = x_center - width/2 + width * segment_progress;
+            rect_path.y = y_center - height/2;
+            rect_path.z = z_height;
+            velocity_out.x = speed;
+            velocity_out.y = 0;
+            break;
+    }
+    
+    velocity_out.z = 0; // 高度不变
+    body_rate_out.x = body_rate_out.y = body_rate_out.z = 0;
+    
+    ROS_INFO_STREAM("Rectangular trajectory - Side: " << side 
+                   << ", Progress: " << segment_progress
+                   << ", Position: (" << rect_path.x << ", " 
+                   << rect_path.y << ", " << rect_path.z << ")");
+    
     return rect_path;
 }
 // this is not a class function 
@@ -367,12 +372,7 @@ void calc_time_var_path(
 int init_data()
 {
     int ret=1;
-    // pos_data.x = pos_data.y = pos_data.z =0;//1
-    // 矩形起点选右下角，与 calc_rectangular 的 side=0 起点一致
-pos_data.x = rect_x_center + rect_width / 2.0;
-pos_data.y = rect_y_center - rect_height / 2.0;
-pos_data.z = rect_z_height;
-
+    pos_data.x = pos_data.y = pos_data.z =0;//1
     euler_data.x = euler_data.y = 0;
     euler_data.z = 0;//0.01
 
@@ -584,19 +584,19 @@ int main(int argc, char **argv)
         //     end_angle,
         //     delta_time
         // );
-//    使用矩形轨迹
-    position_output = calc_rectangular(
-        rect_width,          // 宽度
-        rect_height,         // 高度
-        rect_x_center,       // 中心x
-        rect_y_center,       // 中心y
-        rect_z_height,       // 高度
-        rect_speed,          // 速度
-        rect_progress,       // 进度
-        rect_last_progress,  // 上一次进度
-        delta_time           // 时间步长
-    );
-        // position_output=calc_circle(radius, x_center, y_center, omega_ang, origin_ang,angle_ls, fly_h,delta_time);
+   // 使用矩形轨迹
+    // position_output = calc_rectangular(
+    //     rect_width,          // 宽度
+    //     rect_height,         // 高度
+    //     rect_x_center,       // 中心x
+    //     rect_y_center,       // 中心y
+    //     rect_z_height,       // 高度
+    //     rect_speed,          // 速度
+    //     rect_progress,       // 进度
+    //     rect_last_progress,  // 上一次进度
+    //     delta_time           // 时间步长
+    // );
+        position_output=calc_circle(radius, x_center, y_center, omega_ang, origin_ang,angle_ls, fly_h,delta_time);
 
 
 
